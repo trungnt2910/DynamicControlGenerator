@@ -1,0 +1,36 @@
+﻿<Window x:Class="HNotifyIcon.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HNotifyIcon"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <StackPanel>
+        <Button 
+            x:Name="ToastTrigger"
+            Content="Trigger Toast!"
+            Click="ToastTrigger_Click"
+            VerticalAlignment="Top"
+            HorizontalAlignment="Left"
+                />
+        <Button
+            x:Name="DynamicToastTrigger"
+            Content="Trigger Dynamic Toast!"
+            Click="DynamicToastTrigger_Click"
+            HorizontalAlignment="Left"
+            />
+        <Button 
+            x:Name="CompileButton"
+            Content="Compile!"
+            Click="CompileButton_Click"
+            HorizontalAlignment="Left"
+            />
+        <Button
+            x:Name="InspectButton"
+            Content="Inspect!"
+            Click="InspectButton_Click"
+            HorizontalAlignment="Left"
+            />
+    </StackPanel>
+</Window>
