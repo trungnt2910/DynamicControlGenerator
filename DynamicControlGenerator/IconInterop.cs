@@ -5,7 +5,10 @@ using System.Text;
 
 namespace Uno.Extras.ToastNotification
 {
-    internal static class IconFinder
+    /// <summary>
+    /// Provide wrappers for Icon-related Win32 Functions
+    /// </summary>
+    internal static class IconInterop
     {
         [DllImport("user32.dll")]
         static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
@@ -19,6 +22,10 @@ namespace Uno.Extras.ToastNotification
         [DllImport("user32.dll", EntryPoint = "GetClassLongPtr")]
         static extern IntPtr GetClassLong64(IntPtr hWnd, int nIndex);
 
+        const uint WM_GETICON = 0x007f;
+        private static readonly IntPtr ICON_SMALL2 = new IntPtr(2);
+        const int GCL_HICON = -14;
+
         /// <summary>
         /// 64 bit version maybe loses significant 64-bit specific information
         /// </summary>
@@ -29,11 +36,6 @@ namespace Uno.Extras.ToastNotification
             else
                 return GetClassLong64(hWnd, nIndex);
         }
-
-
-        const uint WM_GETICON = 0x007f;
-        private static readonly IntPtr ICON_SMALL2 = new IntPtr(2);
-        const int GCL_HICON = -14;
 
         public static IntPtr GetSmallWindowIcon(IntPtr hWnd)
         {

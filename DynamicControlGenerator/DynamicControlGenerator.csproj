@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="IconFinder.cs" />
-    <Compile Remove="Interop.cs" />
+    <Compile Remove="IconInterop.cs" />
+    <Compile Remove="ScreenInterop.cs" />
     <Compile Remove="ToastNotificationLoader.cs" />
   </ItemGroup>
 
@@ -15,8 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="IconFinder.cs" />
-    <EmbeddedResource Include="Interop.cs" />
+    <EmbeddedResource Include="IconInterop.cs" />
+    <EmbeddedResource Include="ScreenInterop.cs" />
     <EmbeddedResource Include="ToastNotificationLoader.cs" />
     <EmbeddedResource Include="ToastNotificationXaml.xaml">
       <SubType>Designer</SubType>

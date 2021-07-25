@@ -13,7 +13,7 @@ namespace DynamicControlGenerator
     public static class Compiler
     {
         const string DefaultNamespace = "DynamicControlGenerator";
-        private static readonly string[] CsFileNames = new[] { "ToastNotificationLoader.cs", "Interop.cs", "IconFinder.cs" };
+        private static readonly string[] CsFileNames = new[] { "ToastNotificationLoader.cs", "ScreenInterop.cs", "IconInterop.cs" };
         const string XamlFileName = "ToastNotificationXaml.xaml";
 
         /// <summary>

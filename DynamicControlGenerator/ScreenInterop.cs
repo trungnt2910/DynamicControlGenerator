@@ -9,7 +9,10 @@ using System.Windows.Media;
 
 namespace Uno.Extras.ToastNotification
 {
-    internal static class Interop
+    /// <summary>
+    /// Provides wrappers for Screen position related Win32 functions
+    /// </summary>
+    internal static class ScreenInterop
     {
         #region Unmanaged Functions
         [DllImport("user32.dll", SetLastError = true)]
