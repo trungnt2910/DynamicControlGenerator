@@ -39,7 +39,7 @@ namespace HNotifyIcon
             // Python ease without Python's danger!
             dynamic loader = Activator.CreateInstance(loaderType);
 
-            loader.AppName = "DemoApp";
+            //loader.AppName = "DemoApp";
             loader.Title = "Hello World!";
             loader.Description = "Hello from .NET Standard library!";
 

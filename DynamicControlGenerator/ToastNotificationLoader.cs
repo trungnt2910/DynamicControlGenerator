@@ -343,14 +343,14 @@ namespace Uno.Extras.ToastNotification
             _mouseWasDown = true;
             _control.CaptureMouse();
 
-            var rect = Interop.GetWorkArea();
+            var rect = ScreenInterop.GetWorkArea();
             _popup.HorizontalOffset = rect.Right + _control.ActualWidth;
             _popup.VerticalOffset = rect.Bottom - _control.ActualHeight - 10;
 
             _control.BeginAnimation(FrameworkElement.MarginProperty, null);
             _control.Margin = new Thickness(0, 0, 10 - _deltaX, 0);
 
-            var point = Interop.GetCursorPosition();
+            var point = ScreenInterop.GetCursorPosition();
             _initialXPosition = point.X;
             _deltaX = 0;
         }
@@ -362,7 +362,7 @@ namespace Uno.Extras.ToastNotification
                 return;
             }
 
-            var point = Interop.GetCursorPosition();
+            var point = ScreenInterop.GetCursorPosition();
 
             _deltaX = Math.Max(0, point.X - _initialXPosition);
 
@@ -408,7 +408,7 @@ namespace Uno.Extras.ToastNotification
                     return;
                 }
 
-                var rect = Interop.GetWorkArea();
+                var rect = ScreenInterop.GetWorkArea();
                 _popup.HorizontalOffset = rect.Right - _control.ActualWidth - 10;
                 _popup.VerticalOffset = rect.Bottom - _control.ActualHeight - 10;
 
@@ -479,13 +479,18 @@ namespace Uno.Extras.ToastNotification
             var hWnd = wih.Handle;
 
             AppIconImageSource = Imaging.CreateBitmapSourceFromHIcon(
-                IconFinder.GetSmallWindowIcon(hWnd),
+                IconInterop.GetSmallWindowIcon(hWnd),
                 Int32Rect.Empty,
                 BitmapSizeOptions.FromEmptyOptions());
 
+            if (AppName == null)
+            {
+                AppName = Assembly.GetEntryAssembly().GetName().Name;
+            }
+
             var tcs = new TaskCompletionSource<object>();
 
-            var rect = Interop.GetWorkArea();
+            var rect = ScreenInterop.GetWorkArea();
 
             _control.Measure(new Size { Height = rect.Height, Width = rect.Width });
 
@@ -545,7 +550,7 @@ namespace Uno.Extras.ToastNotification
                     _popup = null;
 
                     var tcs = new TaskCompletionSource<object>();
-                    var rect = Interop.GetWorkArea();
+                    var rect = ScreenInterop.GetWorkArea();
                     popup.HorizontalOffset = rect.Right + _control.DesiredSize.Width + 100;
                     _backgroundRect.Opacity = 0.5;
                     var thicknessAnimation = new ThicknessAnimation
