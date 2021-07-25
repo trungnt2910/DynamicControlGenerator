@@ -33,7 +33,7 @@
         </Style>
     </UserControl.Resources>
     <Grid>
-        <Rectangle Fill="#2E2E2E" RadiusX="8" RadiusY="8" Opacity="0.9"/>
+        <Rectangle Name="BackgroundRect" Fill="#2E2E2E" RadiusX="8" RadiusY="8" Opacity="0.9"/>
         <Grid Margin="12,15,12,15">
             <Grid.RowDefinitions>
                 <RowDefinition/>

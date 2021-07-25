@@ -33,15 +33,14 @@
         </Style>
     </UserControl.Resources>
     <Grid>
-        <Rectangle Fill="#2E2E2E" RadiusX="8" RadiusY="8"/>
+        <Rectangle Name="BackgroundRect" Fill="#2E2E2E" RadiusX="8" RadiusY="8" Opacity="0.9"/>
         <Grid Margin="12,15,12,15">
             <Grid.RowDefinitions>
                 <RowDefinition/>
                 <RowDefinition Height="24"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Grid Name="ContentGrid"
-                  Grid.Row="0">
+            <Grid Grid.Row="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition/>
@@ -90,7 +89,14 @@
                 </Grid>
 
 
-                <Image Name="ContentImage" Width="48" Height="48" Grid.Row="1" Grid.Column="0" Stretch="UniformToFill" Source="{Binding ContentImageSource, Mode=OneWay}"/>
+                <Image Name="ContentImage" 
+                       Width="60" 
+                       Height="60" 
+                       Grid.Row="1"
+                       Grid.Column="0"
+                       Stretch="UniformToFill"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       Source="{Binding ContentImageSource, Mode=OneWay}"/>
                 <StackPanel Name="ContentTextPanel" Grid.Row="1" Grid.Column="2">
                     <TextBlock Text="{Binding Path=Title, Mode=OneWay}" Foreground="White" FontSize="16" FontWeight="DemiBold"/>
                     <TextBlock Text="{Binding Path=Description, Mode=OneWay}" Foreground="#AFB1B2" FontSize="16"/>

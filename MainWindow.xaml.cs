@@ -64,6 +64,7 @@ namespace HNotifyIcon
 
             loader.CloseRequested += ((EventHandler)((s, a) =>
             {
+                Debug.WriteLine("Closed");
                 loader.HideAsync();
             }));
 

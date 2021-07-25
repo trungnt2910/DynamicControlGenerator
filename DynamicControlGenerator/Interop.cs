@@ -9,7 +9,7 @@ using System.Windows.Media;
 
 namespace Uno.Extras.ToastNotification
 {
-    public static class Interop
+    internal static class Interop
     {
         #region Unmanaged Functions
         [DllImport("user32.dll", SetLastError = true)]
@@ -24,12 +24,20 @@ namespace Uno.Extras.ToastNotification
 
         [DllImport("gdi32.dll")]
         static extern int GetDeviceCaps(IntPtr hdc, int nIndex);
+
+        /// <summary>
+        /// Retrieves the cursor's position, in screen coordinates.
+        /// </summary>
+        /// <see>See MSDN documentation for further information.</see>
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetCursorPos(out POINT lpPoint);
         #endregion
 
         #region Constants
         const uint SPI_GETWORKAREA = 0x0030;
         #endregion
 
+        #region Structs
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
         {
@@ -59,6 +67,22 @@ namespace Uno.Extras.ToastNotification
             }
         }
 
+        /// <summary>
+        /// Struct representing a point.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int X;
+            public int Y;
+
+            public static implicit operator Point(POINT point)
+            {
+                return new Point(point.X, point.Y);
+            }
+        }
+        #endregion
+
         public static Rect GetWorkArea()
         {
             var rect = new RECT();
@@ -87,6 +111,19 @@ namespace Uno.Extras.ToastNotification
                 ReleaseDC(desktopWnd, dc);
             }
             return dpi / 96f;
+        }
+
+        public static Point GetCursorPosition()
+        {
+            POINT lpPoint;
+            
+            if (!GetCursorPos(out lpPoint))
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(error);
+            }
+
+            return lpPoint;
         }
     }
 }

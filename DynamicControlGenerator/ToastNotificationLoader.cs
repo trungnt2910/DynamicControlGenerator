@@ -14,6 +14,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 
 namespace Uno.Extras.ToastNotification
 {
@@ -72,7 +73,7 @@ namespace Uno.Extras.ToastNotification
 
         public static readonly DependencyProperty WasPressedProperty =
             DependencyProperty.Register(
-                "Uno.Extras.ToastNotification.ActionButton.WasPressed", typeof(bool), typeof(Button)
+                "Uno.Extras.ToastNotification.WasPressed", typeof(bool), typeof(Button)
                 );
 
         public string AppName
@@ -153,6 +154,8 @@ namespace Uno.Extras.ToastNotification
         private Button _primaryButton;
         private Button _secondaryButton;
 
+        private Rectangle _backgroundRect;
+
         public ToastNotificationLoader()
         {
             Time = DateTime.Now.ToString("h:mm tt");
@@ -160,6 +163,8 @@ namespace Uno.Extras.ToastNotification
             _control.DataContext = this;
             _control.MouseLeftButtonDown += ToastNotification_MouseLeftButtonDown;
             _control.MouseLeftButtonUp += ToastNotification_MouseLeftButtonUp;
+            _control.MouseMove += ToastNotification_MouseMove;
+
             PrimaryButtonClickCommand = new RelayCommand((o) => _control.IsEnabled, (o) => PrimaryButton_Click(this, null));
             SecondaryButtonClickCommand = new RelayCommand((o) => _control.IsEnabled, (o) => SecondaryButton_Click(this, null));
             CloseButtonClickCommand = new RelayCommand(o => _control.IsEnabled, (o) => CloseButton_MouseLeftButtonDown(this, null));
@@ -197,6 +202,8 @@ namespace Uno.Extras.ToastNotification
             _secondaryButton.Click += SecondaryButton_Click;
             _secondaryButton.GotMouseCapture += ActionButton_GotMouseCapture;
 
+            _backgroundRect = _control.FindName("BackgroundRect") as Rectangle;
+
             RelayoutButtons();
         }
 
@@ -204,7 +211,7 @@ namespace Uno.Extras.ToastNotification
         {
             var primaryShown = PrimaryButtonText != null;
             var secondaryShown = SecondaryButtonText != null;
-            
+
             if (primaryShown && secondaryShown)
             {
                 _primaryButton.Visibility = Visibility.Visible;
@@ -314,22 +321,105 @@ namespace Uno.Extras.ToastNotification
             CloseRequested?.Invoke(this, null);
         }
 
+        #region ToastNotificationMouseControls
+        private double _initialXPosition;
+        private double _deltaX;
         private bool _mouseWasDown = false;
 
         private void ToastNotification_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             _mouseWasDown = true;
+            _control.CaptureMouse();
+
+            var rect = Interop.GetWorkArea();
+            _popup.HorizontalOffset = rect.Right + _control.ActualWidth;
+            _popup.VerticalOffset = rect.Bottom - _control.ActualHeight - 10;
+
+            _control.BeginAnimation(FrameworkElement.MarginProperty, null);
+            _control.Margin = new Thickness(0, 0, 10 - _deltaX, 0);
+
+            var point = Interop.GetCursorPosition();
+            _initialXPosition = point.X;
+            _deltaX = 0;
         }
 
-        private void ToastNotification_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void ToastNotification_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_mouseWasDown)
+            {
+                return;
+            }
+
+            var point = Interop.GetCursorPosition();
+
+            _deltaX = Math.Max(0, point.X - _initialXPosition);
+
+            if (_deltaX > 50)
+            {
+                _backgroundRect.Opacity = 0.5;
+            }
+            else
+            {
+                _backgroundRect.Opacity = 0.9;
+            }
+
+            _control.BeginAnimation(FrameworkElement.MarginProperty, null);
+            _control.Margin = new Thickness(0, 0, 10 - _deltaX, 0);
+        }
+
+        private async void ToastNotification_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (_mouseWasDown)
             {
-                NotificationClick?.Invoke(this, null);
-                CloseRequested?.Invoke(this, null);
+                _control.ReleaseMouseCapture();
+
+                var isMouseOver = false;
+                VisualTreeHelper.HitTest(_control, d =>
+                {
+                    if (d == _control)
+                    {
+                        isMouseOver = true;
+                        return HitTestFilterBehavior.Stop;
+                    }
+                    else
+                    {
+                        return HitTestFilterBehavior.Continue;
+                    }
+                },
+                    ht => HitTestResultBehavior.Stop,
+                    new PointHitTestParameters(Mouse.GetPosition(_control)));
+
+                if (isMouseOver && _deltaX < 2)
+                {
+                    NotificationClick?.Invoke(this, null);
+                }
+
+                var rect = Interop.GetWorkArea();
+                _popup.HorizontalOffset = rect.Right - _control.ActualWidth - 10;
+                _popup.VerticalOffset = rect.Bottom - _control.ActualHeight - 10;
+
+                _control.BeginAnimation(FrameworkElement.MarginProperty, new ThicknessAnimationUsingKeyFrames()
+                {
+                    Duration = TimeSpan.Zero,
+                    KeyFrames = new ThicknessKeyFrameCollection()
+                    {
+                        new DiscreteThicknessKeyFrame()
+                        {
+                            Value = new Thickness(0, 0, 0, 0)
+                        }
+                    }
+                });
+
+                if (_deltaX >= 50)
+                {
+                    CloseRequested?.Invoke(this, null);
+                }
+
+                _deltaX = 0;
             }
             _mouseWasDown = false;
         }
+        #endregion
 
         private Popup _popup;
         private object _locker = new object();
@@ -403,7 +493,8 @@ namespace Uno.Extras.ToastNotification
             {
                 From = _control.Margin,
                 To = new Thickness(0, 0, 0, 0),
-                Duration = new Duration(TimeSpan.FromSeconds(0.1))
+                Duration = new Duration(TimeSpan.FromSeconds(0.1)),
+                FillBehavior = FillBehavior.Stop
             };
 
             thicknessAnimation.Completed += AnimationComplete;
@@ -415,6 +506,8 @@ namespace Uno.Extras.ToastNotification
             {
                 thicknessAnimation.Completed -= AnimationComplete;
                 _control.Visibility = Visibility.Visible;
+                _control.BeginAnimation(FrameworkElement.MarginProperty, null);
+                _control.Margin = new Thickness(0, 0, 10, 0);
                 // LMAO dunno why.
                 await Task.Delay(100);
                 _popup.HorizontalOffset = rect.Right - _control.ActualWidth - 10;
