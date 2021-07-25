@@ -485,6 +485,8 @@ namespace Uno.Extras.ToastNotification
 
             _popup.IsOpen = true;
 
+            _backgroundRect.Opacity = 0.9;
+
             // This seems to work, because:
             // When setting Margin to a huge negative size, the whole Control 
             // becomes invisible. This makes the Popup accept a big offet.
@@ -532,6 +534,7 @@ namespace Uno.Extras.ToastNotification
                     var tcs = new TaskCompletionSource<object>();
                     var rect = Interop.GetWorkArea();
                     popup.HorizontalOffset = rect.Right + _control.DesiredSize.Width + 100;
+                    _backgroundRect.Opacity = 0.5;
                     var thicknessAnimation = new ThicknessAnimation
                     {
                         From = _control.Margin,
