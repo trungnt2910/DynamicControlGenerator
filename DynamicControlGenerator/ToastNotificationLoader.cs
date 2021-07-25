@@ -340,12 +340,19 @@ namespace Uno.Extras.ToastNotification
 
         private void ToastNotification_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            lock (_locker)
+            {
+                if (_popup == null)
+                {
+                    return;
+                }
+                var rect = ScreenInterop.GetWorkArea();
+                _popup.HorizontalOffset = rect.Right + _control.ActualWidth;
+                _popup.VerticalOffset = rect.Bottom - _control.ActualHeight - 10;
+            }
+
             _mouseWasDown = true;
             _control.CaptureMouse();
-
-            var rect = ScreenInterop.GetWorkArea();
-            _popup.HorizontalOffset = rect.Right + _control.ActualWidth;
-            _popup.VerticalOffset = rect.Bottom - _control.ActualHeight - 10;
 
             _control.BeginAnimation(FrameworkElement.MarginProperty, null);
             _control.Margin = new Thickness(0, 0, 10 - _deltaX, 0);
@@ -570,6 +577,7 @@ namespace Uno.Extras.ToastNotification
                     {
                         thicknessAnimation.Completed -= AnimationComplete;
                         _control.Visibility = Visibility.Collapsed;
+                        _control.ReleaseMouseCapture();
                         popup.IsOpen = false;
                         popup.Child = null;
                         popup = null;
