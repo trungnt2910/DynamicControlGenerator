@@ -1,5 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,6 +27,8 @@ namespace DynamicControlGenerator
         /// <returns>The Assembly that contains the dynamic control</returns>
         public static Assembly Compile()
         {
+            bool isDebug = Debugger.IsAttached;
+            
             var syntaxTrees = CsFileNames.Select(name => CSharpSyntaxTree.ParseText(ReadResource(name)));
 
             var compilation = CSharpCompilation.Create(
@@ -33,7 +37,7 @@ namespace DynamicControlGenerator
                 GetReferences().ToArray(),
                 new CSharpCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary,
-                    optimizationLevel: OptimizationLevel.Release)
+                    optimizationLevel: isDebug ? OptimizationLevel.Debug : OptimizationLevel.Release)
                 );
 
             var stream = OpenResource(XamlFileName);
@@ -44,24 +48,44 @@ namespace DynamicControlGenerator
                 true);
 
             var memoryStream = new MemoryStream();
-            var result = compilation.Emit(memoryStream, manifestResources: new[] { resourceDescription });
 
-            stream.Dispose();
+            Assembly dynamicallyCompiledAssembly;
 
-            // If it was not successful, throw an exception to fail the test
-            if (!result.Success)
+            if (isDebug)
             {
-                var stringBuilder = new StringBuilder();
-                foreach (var diagnostic in result.Diagnostics)
+                var pdbStream = new MemoryStream();
+                var emitOptions = new EmitOptions(
+                    debugInformationFormat: DebugInformationFormat.PortablePdb);
+                var embeddedTexts = CsFileNames.Select(name =>
                 {
-                    stringBuilder.AppendLine(diagnostic.ToString());
+                    return EmbeddedText.FromSource(name, SourceText.From(ReadResource(name), Encoding.UTF8));
+                });
+                var result = compilation.Emit(memoryStream, pdbStream,
+                    manifestResources: new[] { resourceDescription },
+                    embeddedTexts: embeddedTexts,
+                    options: emitOptions);
+
+                // If it was not successful, throw an exception to fail the test
+                if (!result.Success)
+                {
+                    var stringBuilder = new StringBuilder();
+                    foreach (var diagnostic in result.Diagnostics)
+                    {
+                        stringBuilder.AppendLine(diagnostic.ToString());
+                    }
+
+                    throw new InvalidOperationException(stringBuilder.ToString());
                 }
 
-                throw new InvalidOperationException(stringBuilder.ToString());
+                dynamicallyCompiledAssembly = Assembly.Load(memoryStream.ToArray(), pdbStream.ToArray());
+            }
+            else
+            {
+                var result = compilation.Emit(memoryStream, manifestResources: new[] { resourceDescription });
+                dynamicallyCompiledAssembly = Assembly.Load(memoryStream.ToArray());
             }
 
-            // Otherwise load the assembly, instantiate the type via reflection
-            var dynamicallyCompiledAssembly = Assembly.Load(memoryStream.ToArray());
+            stream.Dispose();
 
             return dynamicallyCompiledAssembly;
         }
