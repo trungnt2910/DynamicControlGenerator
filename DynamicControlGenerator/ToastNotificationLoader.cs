@@ -392,6 +392,8 @@ namespace Uno.Extras.ToastNotification
                 if (isMouseOver && _deltaX < 2)
                 {
                     NotificationClick?.Invoke(this, null);
+                    CloseRequested?.Invoke(this, null);
+                    return;
                 }
 
                 var rect = Interop.GetWorkArea();
