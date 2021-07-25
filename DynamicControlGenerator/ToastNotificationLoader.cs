@@ -379,7 +379,7 @@ namespace Uno.Extras.ToastNotification
             _control.Margin = new Thickness(0, 0, 10 - _deltaX, 0);
         }
 
-        private async void ToastNotification_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void ToastNotification_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (_mouseWasDown)
             {
