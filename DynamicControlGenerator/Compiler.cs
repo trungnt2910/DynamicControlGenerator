@@ -171,7 +171,8 @@ namespace DynamicControlGenerator
                 }
             }
 
-            return result.Select(asm => asm.ToMetadataReference());
+            return result.Select(asm => { try { return asm.ToMetadataReference(); } catch { return null; } })
+                         .Where(meta => meta != null);
         }
 
         private static MetadataReference ToMetadataReference(this Assembly asm)
