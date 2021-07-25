@@ -383,6 +383,7 @@ namespace Uno.Extras.ToastNotification
         {
             if (_mouseWasDown)
             {
+                _mouseWasDown = false;
                 _control.ReleaseMouseCapture();
 
                 var isMouseOver = false;
@@ -431,7 +432,6 @@ namespace Uno.Extras.ToastNotification
 
                 _deltaX = 0;
             }
-            _mouseWasDown = false;
         }
         #endregion
 
