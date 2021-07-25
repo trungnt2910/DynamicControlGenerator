@@ -33,8 +33,6 @@ namespace HNotifyIcon
 
         private async void ToastTrigger_Click(object sender, RoutedEventArgs e)
         {
-            await Task.Delay(5000);
-
             var asm = ToastNotificationLibrary.Value;
             var loaderType = asm.GetTypes().FirstOrDefault(type => type.Name == "ToastNotificationLoader");
 

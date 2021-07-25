@@ -16,6 +16,13 @@ namespace DynamicControlGenerator
         private static readonly string[] CsFileNames = new[] { "ToastNotificationLoader.cs", "Interop.cs", "IconFinder.cs" };
         const string XamlFileName = "ToastNotificationXaml.xaml";
 
+        /// <summary>
+        /// Compiles the dynamic control, and references Framework-specific assemblies.
+        /// This method is slow, takes about 2 seconds on all targets.
+        /// Therefore, it is recommended that the assembly should be compiled as soon as possible
+        /// on a background thread.
+        /// </summary>
+        /// <returns>The Assembly that contains the dynamic control</returns>
         public static Assembly Compile()
         {
             var syntaxTrees = CsFileNames.Select(name => CSharpSyntaxTree.ParseText(ReadResource(name)));
@@ -53,7 +60,7 @@ namespace DynamicControlGenerator
                 throw new InvalidOperationException(stringBuilder.ToString());
             }
 
-            // Otherwise load the assembly, instantiate the type via reflection and call CalculateSomething
+            // Otherwise load the assembly, instantiate the type via reflection
             var dynamicallyCompiledAssembly = Assembly.Load(memoryStream.ToArray());
 
             return dynamicallyCompiledAssembly;
@@ -81,79 +88,71 @@ namespace DynamicControlGenerator
 
         private static IEnumerable<MetadataReference> GetReferences()
         {
-            yield return GetAssemblyOfSystemPredefined().ToMetadataReference();
+            // Tested on .NET 4.8, .NET Core 3.1, and the latest .NET 5.0
 
             var entry = Assembly.GetEntryAssembly();
-
-            //var wpfCore = new[] { "System.Runtime", "System.Xaml" };
-
-            //foreach (var asmName in entry.GetReferencedAssemblies())
-            //{
-            //    if (wpfCore.Contains(asmName.Name))
-            //    {
-            //        yield return Assembly.Load(asmName).ToMetadataReference();
-            //    }
-            //}
-
-            foreach (var asm in GetAssembliesOfWpf())
+            var applicationType = entry.GetTypes().FirstOrDefault(t =>
             {
-                yield return asm.ToMetadataReference();
+                // Clients might be using libraries that extends
+                // System.Windows.Application
+                // so we must check the whole class tree.
+                do
+                {
+                    Debug.WriteLine(t.Name);
+                    if (t.FullName == "System.Windows.Application")
+                    {
+                        return true;
+                    }
+                    t = t.BaseType;
+                }
+                while (t != null);
+
+                return false;
+            });
+
+            if (applicationType == null)
+            {
+                throw new InvalidOperationException("This program is not a valid WPF application. Check your app's App.xaml");
             }
+
+            var presentationFrameworkAssembly = applicationType.Assembly;
+
+            // This is safe, `Assembly`s have their `GetHashCode` method overridden.
+            var result = new HashSet<Assembly>();
+
+            // Running a BFS, a classic thing for CPers.
+            var q = new Queue<Assembly>();
+            q.Enqueue(presentationFrameworkAssembly);
+
+            while (q.Count > 0)
+            {
+                var asm = q.Dequeue();
+                foreach (var childName in asm.GetReferencedAssemblies())
+                {
+                    try
+                    {
+                        var childAsm = Assembly.Load(childName);
+                        if (result.Contains(childAsm))
+                        {
+                            continue;
+                        }
+
+                        q.Enqueue(childAsm);
+                        result.Add(childAsm);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        Debug.WriteLine($"Cannot find {childName}");
+                    }
+                }
+            }
+
+            return result.Select(asm => asm.ToMetadataReference());
         }
 
         private static MetadataReference ToMetadataReference(this Assembly asm)
         {
             return MetadataReference.CreateFromFile(asm.Location);
-        }
-
-        private static Assembly GetAssemblyOfSystemPredefined()
-        {
-            var assembly = Assembly.GetEntryAssembly();
-
-            // The assembly should contain at least a type?
-            var type = assembly.GetTypes().FirstOrDefault();
-
-            // All types should inherit System.Object
-            while (type.BaseType != null)
-            {
-                type = type.BaseType;
-            }
-
-            return type.Assembly;
-        }
-
-        private static IEnumerable<Assembly> GetAssembliesOfWpf()
-        {
-            //EVEN WORKS ON .NET FRAMEWORK!
-            //Tested on .NET Core 3.1, .NET 5.0 and .NET Framework 4.8
-
-            var assembly = Assembly.GetEntryAssembly();
-
-            // This is guaranteed.
-            var presentationFrameworkName = assembly.GetReferencedAssemblies()
-                .FirstOrDefault(asm => asm.Name == "PresentationFramework");
-
-            if (presentationFrameworkName == null)
-            {
-                throw new PlatformNotSupportedException("This function must be called from a .NET (Core) WPF app.");
-            }
-
-            var presentationFramework = Assembly.Load(presentationFrameworkName);
-
-            yield return presentationFramework;
-
-            foreach (var asm in presentationFramework.GetReferencedAssemblies())
-            {
-                var asmLoad = Assembly.Load(asm);
-                yield return asmLoad;
-                if (asm.Name == "System.Xml.ReaderWriter")
-                {
-                    foreach (var asmChild in asmLoad.GetReferencedAssemblies())
-                    {
-                        yield return Assembly.Load(asmChild);
-                    }
-                }
-            }
         }
     }
 }
