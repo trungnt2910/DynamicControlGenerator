@@ -20,6 +20,7 @@ namespace Uno.Extras.ToastNotification
 {
     public class ToastNotificationLoader : DependencyObject
     {
+        #region DependencyProperties
         public static readonly DependencyProperty AppNameProperty =
             DependencyProperty.Register(
                 "AppName", typeof(string), typeof(ToastNotificationLoader)
@@ -70,12 +71,16 @@ namespace Uno.Extras.ToastNotification
             DependencyProperty.Register(
                 "CloseButtonClickCommand", typeof(RelayCommand), typeof(ToastNotificationLoader)
                 );
+        #endregion
 
+        #region Attached DependencyProperties
         public static readonly DependencyProperty WasPressedProperty =
             DependencyProperty.Register(
                 "Uno.Extras.ToastNotification.WasPressed", typeof(bool), typeof(Button)
                 );
+        #endregion
 
+        #region Properties
         public string AppName
         {
             get => (string)GetValue(AppNameProperty);
@@ -145,7 +150,9 @@ namespace Uno.Extras.ToastNotification
             get => (RelayCommand)GetValue(CloseButtonClickCommandProperty);
             private set => SetValue(CloseButtonClickCommandProperty, value);
         }
+        #endregion
 
+        #region XamlControls
         private UserControl _control;
         private SolidColorBrush _buttonBorderBrush;
         private SolidColorBrush _buttonBackgroundBrush;
@@ -155,6 +162,7 @@ namespace Uno.Extras.ToastNotification
         private Button _secondaryButton;
 
         private Rectangle _backgroundRect;
+        #endregion
 
         public ToastNotificationLoader()
         {
@@ -207,6 +215,32 @@ namespace Uno.Extras.ToastNotification
             RelayoutButtons();
         }
 
+        #region Events
+        public event EventHandler CloseRequested;
+        public event EventHandler PrimaryButtonClick;
+        public event EventHandler SecondaryButtonClick;
+
+        public event EventHandler NotificationClick;
+
+        private void CloseButton_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            CloseRequested?.Invoke(this, null);
+        }
+
+        private void PrimaryButton_Click(object sender, RoutedEventArgs e)
+        {
+            PrimaryButtonClick?.Invoke(this, null);
+            CloseRequested?.Invoke(this, null);
+        }
+
+        private void SecondaryButton_Click(object sender, RoutedEventArgs e)
+        {
+            SecondaryButtonClick?.Invoke(this, null);
+            CloseRequested?.Invoke(this, null);
+        }
+        #endregion
+
+        #region Action Buttons
         private void RelayoutButtons()
         {
             var primaryShown = PrimaryButtonText != null;
@@ -297,31 +331,9 @@ namespace Uno.Extras.ToastNotification
                 button.Background = _buttonBackgroundBrush;
             }
         }
+        #endregion
 
-        public event EventHandler CloseRequested;
-        public event EventHandler PrimaryButtonClick;
-        public event EventHandler SecondaryButtonClick;
-
-        public event EventHandler NotificationClick;
-
-        private void CloseButton_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            CloseRequested?.Invoke(this, null);
-        }
-
-        private void PrimaryButton_Click(object sender, RoutedEventArgs e)
-        {
-            PrimaryButtonClick?.Invoke(this, null);
-            CloseRequested?.Invoke(this, null);
-        }
-
-        private void SecondaryButton_Click(object sender, RoutedEventArgs e)
-        {
-            SecondaryButtonClick?.Invoke(this, null);
-            CloseRequested?.Invoke(this, null);
-        }
-
-        #region ToastNotificationMouseControls
+        #region Toast Notification Mouse Controls
         private double _initialXPosition;
         private double _deltaX;
         private bool _mouseWasDown = false;
@@ -423,6 +435,7 @@ namespace Uno.Extras.ToastNotification
         }
         #endregion
 
+        #region Show and Hide
         private Popup _popup;
         private object _locker = new object();
 
@@ -564,6 +577,7 @@ namespace Uno.Extras.ToastNotification
                 }
             }
         }
+        #endregion
 
         public class RelayCommand : ICommand
         {
